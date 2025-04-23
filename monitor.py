@@ -21,19 +21,31 @@ new_jobs = {"netflix": [], "wrapbook": []}
 # ---------- Netflix ----------
 def check_netflix_jobs():
     url = "https://explore.jobs.netflix.net/careers?query=coordinator&pid=790302362428&domain=netflix.com&sort_by=new&triggerGoButton=false&utm_source=Netflix%20Careersite"
-    response = requests.get(url)
-    data = response.json()
-    jobs = data.get("jobs", [])
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
 
-    fresh = []
-    for job in jobs:
-        job_id = job.get("job_id")
-        if job_id and job_id not in seen_jobs["netflix"]:
-            seen_jobs["netflix"].append(job_id)
-            fresh.append(f"Netflix: {job.get('title')} - {job.get('team')} - {job.get('location')}")
+        try:
+            data = response.json()
+        except json.JSONDecodeError:
+            print("[Netflix] Failed to decode JSON. Response content:")
+            print(response.text[:500])  # Preview the response
+            return
 
-    if fresh:
-        new_jobs["netflix"].extend(fresh)
+        jobs = data.get("jobs", [])
+        fresh = []
+        for job in jobs:
+            job_id = job.get("job_id")
+            if job_id and job_id not in seen_jobs["netflix"]:
+                seen_jobs["netflix"].append(job_id)
+                fresh.append(f"Netflix: {job.get('title')} - {job.get('team')} - {job.get('location')}")
+
+        if fresh:
+            new_jobs["netflix"].extend(fresh)
+
+    except requests.RequestException as e:
+        print(f"[Netflix] Request error: {e}")
+
 
 # ---------- Wrapbook ----------
 def check_wrapbook_jobs():
